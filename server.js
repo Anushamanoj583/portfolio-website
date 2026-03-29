@@ -1,45 +1,50 @@
-require("dotenv").config();
 const express = require("express");
 const cors = require("cors");
+const path = require("path");
 const { Pool } = require("pg");
+require("dotenv").config();
 
 const app = express();
+
 app.use(cors());
 app.use(express.json());
+app.use(express.urlencoded({ extended: true }));
 
-const port = process.env.PORT || 3000;
-
-// Pick database URL depending on environment
-const databaseURL =
-  process.env.NODE_ENV === "production"
-    ? process.env.DATABASE_URL_EXTERNAL
-    : process.env.DATABASE_URL_LOCAL;
-
+// PostgreSQL connection
 const pool = new Pool({
-  connectionString: databaseURL,
+  connectionString: process.env.DATABASE_URL,
+  ssl: {
+    rejectUnauthorized: false,
+  },
 });
 
-// Test route
-app.get("/", (req, res) => res.send("Server is running!"));
+// Serve frontend
+app.use(express.static(path.join(__dirname, "public")));
 
-// Contact route
+app.get("/", (req, res) => {
+  res.sendFile(path.join(__dirname, "public", "index.html"));
+});
+
+// Contact form API
 app.post("/contact", async (req, res) => {
+  console.log("Request recieved:",req.body);
   const { name, email, message } = req.body;
-
-  if (!name || !email || !message) {
-    return res.status(400).json({ success: false, error: "Missing fields" });
-  }
 
   try {
     await pool.query(
       "INSERT INTO contact (name, email, message) VALUES ($1, $2, $3)",
       [name, email, message]
     );
-    res.json({ success: true });
+
+    res.send("Message sent successfully");
   } catch (err) {
-    console.error("Database error:", err.message);
-    res.status(500).json({ success: false, error: err.message });
+    console.log(err);
+    res.send("Error saving message");
   }
 });
 
-app.listen(port, () => console.log(`Server running on port ${port}`));
+// Render port
+const PORT = process.env.PORT || 3000;
+app.listen(PORT, () => {
+  console.log("Server running on port " + PORT);
+});
