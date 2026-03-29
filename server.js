@@ -32,7 +32,7 @@ app.post("/contact", async (req, res) => {
 
   try {
     await pool.query(
-      "INSERT INTO contact (name, email, message) VALUES ($1, $2, $3)",
+      "INSERT INTO messages (name, email, message) VALUES ($1, $2, $3)",
       [name, email, message]
     );
 
