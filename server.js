@@ -1,42 +1,27 @@
 const express = require("express");
-const app = express();
 const path = require("path");
-const cors = require("cors");
-const { Pool } = require("pg");
 require("dotenv").config();
 
-app.use(cors());
+const app = express();
+
 app.use(express.json());
+app.use(express.urlencoded({ extended: true }));
 
-// PostgreSQL connection
-const pool = new Pool({
-  connectionString: process.env.DATABASE_URL,
-  ssl: {
-    rejectUnauthorized: false,
-  },
-});
-
-// Serve frontend files from public folder
+// Serve frontend
 app.use(express.static(path.join(__dirname, "public")));
 
-// Contact form API
-app.post("/contact", async (req, res) => {
-  const { name, email, subject, message } = req.body;
-
-  try {
-    await pool.query(
-      "INSERT INTO messages (name, email, subject, message) VALUES ($1, $2, $3, $4)",
-      [name, email, subject, message]
-    );
-    res.json({ success: true });
-  } catch (err) {
-    console.error(err);
-    res.json({ success: false });
-  }
+app.get("/", (req, res) => {
+  res.sendFile(path.join(__dirname, "public", "index.html"));
 });
 
-// Start server
-const PORT = process.env.PORT || 5000;
+// Contact form API
+app.post("/contact", (req, res) => {
+  console.log(req.body);
+  res.send("Message received");
+});
+
+// Render port
+const PORT = process.env.PORT || 3000;
 app.listen(PORT, () => {
-  console.log(`Server running on port ${PORT}`);
+  console.log("Server running on port " + PORT);
 });
